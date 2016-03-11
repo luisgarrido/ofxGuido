@@ -1,0 +1,3 @@
+[submodule "guidolib-code"]
+	path = guidolib-code
+	url = git://git.code.sf.net/p/guidolib/code
