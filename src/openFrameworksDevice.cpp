@@ -2,6 +2,8 @@
 	GUIDO Library
 	Copyright (C) 2012	Grame
 
+	openFrameworks Guido interface by Thomas Coffy (c) IRCAM 2014
+
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License (Version 2), 
 	as published by the Free Software Foundation.
@@ -13,14 +15,10 @@
 	Lesser General Public License for more details.
 */
 
-
 #include "openFrameworksDevice.h"
 #include "openFrameworksFont.h"
-#include <ofMain.h>
 
-#ifndef GL_MULTISAMPLE_ARB
-#define GL_MULTISAMPLE_ARB 0x809D
-#endif
+#include <ofMain.h>
 
 // --------------------------------------------------------------
 // static tools
@@ -57,26 +55,62 @@ openFrameworksDevice::openFrameworksDevice(int width_, int height_, VGSystem* sy
 	fWidth = width_;
 	fHeight = height_;
 
-	cout << "openFrameworksDevice: allocating FBO: " << fWidth << "x" << fHeight << endl;
-
 	ofClear(255,255,255, 0);
 	glClearColor( 0.0, 0.0, 0.0, 0.0 );
+#if 0
 	glClear (GL_COLOR_BUFFER_BIT);
 	glEnable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable( GL_DEPTH_TEST );
 	glEnable(GL_MULTISAMPLE_ARB);
-
 	drawCache.allocate(fWidth, fHeight, GL_RGBA, 8);
-	drawCache.begin();
-	ofClear(255,255,255, 0);
+#endif
 
-	drawCache.end();
+    int w, h;
+    ofFbo::Settings settings;
+#ifdef ASCOGRAPH_IOS
+    fWidth = 1024;
+    fHeight = 1024;
+    
+    /*GLint dims[2];
+    glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &dims[0]);
+    fWidth = w = dims[0]; fHeight = h = dims[1];*/
+    settings.width = fWidth;
+    settings.height = fHeight;
+    settings.numSamples = 0;
+#else
+    glClear (GL_COLOR_BUFFER_BIT);
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable( GL_DEPTH_TEST );
+    glEnable(GL_MULTISAMPLE_ARB);
+
+    fWidth = 1024;
+    fHeight = 1024;
+    settings.width = fWidth;
+    settings.height = fHeight;
+    settings.numSamples = 8;
+#endif
+    //cout << "openFrameworksDevice: allocating FBO: " << fWidth << "x" << fHeight << endl;
+
+    settings.internalformat = GL_RGBA;
+    settings.useDepth = false;
+    settings.useStencil = false;
+ 
+    drawCache.allocate(settings);
+
+    drawCache.begin();
+    ofClear(255,255,255, 0);
+    drawCache.end();
 }
 
 // --------------------------------------------------------------
 openFrameworksDevice::~openFrameworksDevice()
 {
+#ifdef ASCOGRAPH_IOS
+    if (drawCache.isAllocated())
+        glDeleteFramebuffersOES(1, &fbo);
+#endif
 }
 
 // - Drawing services ------------------------------------------------
@@ -84,11 +118,13 @@ openFrameworksDevice::~openFrameworksDevice()
 bool openFrameworksDevice::BeginDraw()	{ 
 	ofPushStyle();
 	drawCache.begin();
+	ofClear(255,255,255, 0);
 	return true;
 }
-void openFrameworksDevice::EndDraw()		{ 
+void openFrameworksDevice::EndDraw()		{
 	drawCache.end();
-	ofPopStyle(); 
+
+	ofPopStyle();
 }
 void openFrameworksDevice::InvalidateRect( float /*left*/, float /*top*/, float /*right*/, float /*bottom*/ ) {}
 
@@ -260,11 +296,41 @@ float openFrameworksDevice::GetYScale() const				{ return fYScale; }
 void openFrameworksDevice::NotifySize( int width, int height ) { 
 	fWidth = width; fHeight = height;
 
-	//cout << "openFrameworksDevice::NotifySize: allocating FBO: " << fWidth << "x" << fHeight << endl;
-	drawCache.allocate(fWidth, fHeight, GL_RGBA, 8);
-	drawCache.begin();
-	ofClear(255,255,255, 0);
-	drawCache.end();
+    int w, h;
+    ofFbo::Settings settings;
+#ifdef ASCOGRAPH_IOS
+    fWidth = 1024;
+    fHeight = 1024;
+    
+    //GLint dims[2];
+    //glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &dims[0]);
+    //fWidth = w = dims[0]; fHeight = h = dims[1];
+    settings.width = fWidth;
+    settings.height = fHeight;
+    settings.numSamples = 0;
+#else
+
+    fWidth = 1024;
+    fHeight = 1024;
+    settings.width = fWidth;
+    settings.height = fHeight;
+    glClear (GL_COLOR_BUFFER_BIT);
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable( GL_DEPTH_TEST );
+    glEnable(GL_MULTISAMPLE_ARB);
+    settings.numSamples = 8;
+#endif
+    //cout << "openFrameworksDevice::NotifySize: allocating FBO: " << fWidth << "x" << fHeight << endl;
+    settings.internalformat = GL_RGBA;
+    settings.useDepth = false;
+    settings.useStencil = false;
+
+    drawCache.allocate(settings);
+
+    drawCache.begin();
+    ofClear(255,255,255, 0);
+    drawCache.end();
 }
 int openFrameworksDevice::GetWidth() const				{ return fWidth; }
 int openFrameworksDevice::GetHeight() const				{ return fHeight; }
@@ -291,12 +357,14 @@ const VGFont *	openFrameworksDevice::GetTextFont() const			{ return fTextFont; }
 // - Text and music symbols services -------------------------------------
 void openFrameworksDevice::DrawMusicSymbol(float x, float y, unsigned int inSymbolID ) 
 {
+	//cout << "openFrameworksDevice::DrawMusicSymbol: " << x << ", " << y << " id=" << inSymbolID << endl;
 	string text;
 	text += wchar_t(inSymbolID);
 
 	ofSetColor(Color2ofColor(fFontColor));
 	ofTrueTypeFont* f = (ofTrueTypeFont*)(&static_cast<const openFrameworksFont*>(fCurrentFont)->NativeFont());
-	f->drawString (text, int(x), int(y));
+	f->drawStringAsShapes (text, int(x), int(y));
+	//f->drawString (text, int(x), int(y));
 	ofSetColor( Color2ofColor(fFillColor));
 }
 

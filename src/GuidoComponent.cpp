@@ -176,23 +176,24 @@ void GuidoComponent::draw (int x, int y, int w, int h)
 {
 	if (!fGRHandler) return;
 
+	int xx = x / getDevice()->GetXScale();
+	int yy = y / getDevice()->GetYScale();
+	int ww = w / getDevice()->GetXScale();
+	int hh = h / getDevice()->GetYScale();
+
+	setWidth(ww); setHeight(hh);
 	ofSetColor(fScoreColor);
 	GuidoOnDrawDesc desc;
 	desc.handle = fGRHandler;
 	desc.hdc = &gDevice;
 	desc.page = fPage;
-	desc.scrollx = 0;
+	desc.scrollx = xx;
 	desc.scrolly = 0;
 	desc.isprint = false;
-	desc.updateRegion.left = x;
-	desc.updateRegion.top = y;
-	desc.updateRegion.right = w;
-	desc.updateRegion.bottom = h;
 	desc.updateRegion.erase = true;
-	desc.sizex = w;
-	desc.sizey = h;
+	desc.sizex = ww;
+	desc.sizey = hh;
 
-	//GuidoUpdateGR(fGRHandler, &fSettings);
 	GuidoErrCode err = GuidoOnDraw (&desc);
 	if (err != guidoNoErr)
 		cerr << "error while painting: " << GuidoGetErrorString(err) << endl;

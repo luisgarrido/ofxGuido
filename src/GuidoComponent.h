@@ -2,6 +2,8 @@
 	GUIDO Library
 	Copyright (C) 2012	Grame
 
+	openFrameworks Guido interface by Thomas Coffy (c) IRCAM 2014
+
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License (Version 2), 
 	as published by the Free Software Foundation.
@@ -117,6 +119,7 @@ public:
 		int getHeight();
 		int getWidth();
 		void setSize(int w, int h) { width = w; height = h; }
+		void setScale(float x, float y) { getDevice()->SetScale(x, y); }
 
 		void draw(int x, int y, int w, int h);
 //		void resized();

@@ -1,12 +1,18 @@
 #include "ofxGuido.h"
 
 
-ofxGuido::ofxGuido(GuidoLayoutSettings& layoutSettings)
+ofxGuido::ofxGuido(GuidoLayoutSettings* layoutSettings)
 {
 	guido = new GuidoComponent();
-//	guido->GuidoInit("DroidSansMono.ttf", "GUI/guido2.ttf");
-	guido->GuidoInit("TibetanMachineUni.ttf", "guido2.ttf");
-	guido->setGuidoLayoutSettings(layoutSettings);
+#ifndef ASCOGRAPH_IOS
+	string textfont = ofFilePath::getCurrentExeDir() + "../Resources/DroidSansMono.ttf";
+	string guidofont = ofFilePath::getCurrentExeDir() + "../Resources/GUI/guido2.ttf";
+#else
+    string textfont("DroidSansMono.ttf");
+	string guidofont("GUI/guido2.ttf");
+#endif
+	guido->GuidoInit(textfont.c_str(), guidofont.c_str());
+	if (layoutSettings) guido->setGuidoLayoutSettings(*layoutSettings);
 }
 
 
@@ -22,8 +28,11 @@ void ofxGuido::getPageFormat(GuidoPageFormat& format)
 }
 
 void ofxGuido::draw_cache(int x, int y) {
-	if (guido)
+	if (guido) {
+
 		guido->getDevice()->drawCache.draw(x, y);
+
+	}
 }
 
 void ofxGuido::draw(int x, int y, int w, int h) {

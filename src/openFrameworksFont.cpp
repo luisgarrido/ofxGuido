@@ -1,6 +1,9 @@
 /*
 	GUIDO Library
 	Copyright (C) 2012	Grame
+
+	openFrameworks Guido interface by Thomas Coffy (c) IRCAM 2014
+	
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License (Version 2), 
 	as published by the Free Software Foundation.
@@ -37,9 +40,14 @@ openFrameworksFont::openFrameworksFont(const char * faceName, int size, int prop
 	string font = faceName;
 	if (font == "Times New Roman") // for an obscure reason, the text facename lack file extension
 		font += ".ttf";
+#ifdef ASCOGRAPH_IOS
+    if (font == "Guido2") font = "guido2.ttf";
+#endif
 	cout << "Guido::openFrameworksFont loading " << font << endl;
-	if (!fNativeFont->loadFont(font, float(size * scale)))
+
+	if (!fNativeFont->loadFont(font, float(size * scale), true, true, true))
 		cerr << "Error: can not load font : " << font << endl;
+	fNativeFont->setEncoding(OF_ENCODING_ISO_8859_15);
 	fName = font;
 }
 
