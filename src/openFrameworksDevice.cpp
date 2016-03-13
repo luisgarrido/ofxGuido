@@ -20,6 +20,10 @@
 
 #include <ofMain.h>
 
+#ifndef GL_MULTISAMPLE_ARB
+#define GL_MULTISAMPLE_ARB 0x809D
+#endif
+
 // --------------------------------------------------------------
 // static tools
 static float CoordToRadian( float x, float y )		{ return (float)atan2( x, y ); }
