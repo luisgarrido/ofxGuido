@@ -19,8 +19,9 @@
 #ifndef __GuidoComponent__
 #define __GuidoComponent__
 
+#include <ofxGuidoDevice.h>
+
 #include "GUIDOEngine.h"
-#include "openFrameworksDevice.h"
 #include <ofMain.h>
 
 class GuidoComponent  //: public Component
@@ -124,7 +125,7 @@ public:
 		void draw(int x, int y, int w, int h);
 //		void resized();
 
-		openFrameworksDevice* getDevice();
+		ofxGuidoDevice* getDevice();
 	/**
 	*	\brief Guido Engine initialization.
 	

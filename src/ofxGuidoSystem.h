@@ -1,5 +1,5 @@
-#ifndef __openFrameworksSystem__
-#define __openFrameworksSystem__
+#ifndef __ofxGuidoSystem__
+#define __ofxGuidoSystem__
 
 /*
 	GUIDO Library
@@ -23,11 +23,11 @@
 // --------------------------------------------------------------
 // 		openFrameworks implementation of the VGSystem class
 // --------------------------------------------------------------
-class openFrameworksSystem : public VGSystem
+class ofxGuidoSystem : public VGSystem
 {
 	public:
-	openFrameworksSystem() {}
-	virtual	~openFrameworksSystem() {}
+	ofxGuidoSystem() {}
+	virtual	~ofxGuidoSystem() {}
 
 	// - VGDevice services -------------------------------------------
 	virtual VGDevice*		CreateDisplayDevice( );

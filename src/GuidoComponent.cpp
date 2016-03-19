@@ -13,22 +13,22 @@
 	Lesser General Public License for more details.
 */
 
+#include <ofxGuidoDevice.h>
+#include <ofxGuidoSystem.h>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-#include "openFrameworksDevice.h"
-#include "openFrameworksSystem.h"
 #include "GuidoComponent.h"
 #include "GUIDOParse.h"
 
 using namespace std;
 
 
-static openFrameworksSystem gSystem;
-static openFrameworksDevice gDevice(&gSystem);
+static ofxGuidoSystem gSystem;
+static ofxGuidoDevice gDevice(&gSystem);
 
-openFrameworksDevice* GuidoComponent::getDevice() {
+ofxGuidoDevice* GuidoComponent::getDevice() {
 	return &gDevice;
 }
 

@@ -1,48 +1,54 @@
-#include "ofxGuido.h"
+/*
+ * ofxGuidoFbo.cpp
+ *
+ *  Created on: Mar 15, 2016
+ *      Author: luis
+ */
 
+#include <ofxGuido.h>
 
-ofxGuido::ofxGuido(GuidoLayoutSettings* layoutSettings)
-{
-	guido = new GuidoComponent();
-#ifndef ASCOGRAPH_IOS
-	string textfont = ofFilePath::getCurrentExeDir() + "../Resources/DroidSansMono.ttf";
-	string guidofont = ofFilePath::getCurrentExeDir() + "../Resources/GUI/guido2.ttf";
-#else
-    string textfont("DroidSansMono.ttf");
-	string guidofont("GUI/guido2.ttf");
-#endif
-	guido->GuidoInit(textfont.c_str(), guidofont.c_str());
-	if (layoutSettings) guido->setGuidoLayoutSettings(*layoutSettings);
+#include <ofFbo.h>
+
+ofxGuido::ofxGuido(int w, int h) : mARHandler(), mGRHandler() {
+	mGuidoDevice = mGuidoSystem.CreateMemoryDevice(w, h);
+	mGuidoInitDesc.graphicDevice = mGuidoDevice;
+	mGuidoInitDesc.musicFont = "guido2.ttf";
+	mGuidoInitDesc.textFont = "guidotext.ttf";
+	GuidoInit(&mGuidoInitDesc);
+	GuidoGetDefaultLayoutSettings(& mGuidoLayoutSettings);
+	mGuidoOnDrawDesc.hdc = mGuidoDevice;
 }
 
+void ofxGuido::loadString(const char * s) {
+	GuidoParseString(s, &mARHandler);
+	GuidoAR2GR(mARHandler, &mGuidoLayoutSettings, & mGuidoOnDrawDesc.handle);
+	GuidoResizePageToMusic(mGuidoOnDrawDesc.handle);
+	mGuidoOnDrawDesc.page = 1;
+	mGuidoOnDrawDesc.scrollx = 0;
+	mGuidoOnDrawDesc.scrolly = 0;
+	mGuidoOnDrawDesc.updateRegion.erase = true;
+	mGuidoOnDrawDesc.sizex = 600;
+	mGuidoOnDrawDesc.sizey = 600;
+//	mGuidoDevice->SetScale(2, 2);
+	mGuidoDevice->SetFontColor(VGColor(0,0,0));
 
-bool ofxGuido::compile_string(const string& gstr)
-{
-	int err = guido->setGMNCode(gstr.c_str());
-	return !(err == -1);
+	GuidoOnDraw(&mGuidoOnDrawDesc);
+	GuidoPageFormat gpf;
+	GuidoGetPageFormat(mGuidoOnDrawDesc.handle, 1, &gpf);
+	ofLogNotice("AurinDebug") << gpf.width << "x" << gpf.height;
 }
 
-void ofxGuido::getPageFormat(GuidoPageFormat& format)
-{
-	GuidoGetPageFormat(guido->getGRHandler(), 1, &format);
+void ofxGuido::draw(int x, int y) {
+	ofFbo * fbo = static_cast<ofFbo *>(mGuidoDevice->GetNativeContext());
+	fbo = & static_cast<ofxGuidoDevice *>(mGuidoDevice)->drawCache;
+	fbo->begin();
+	fbo->end();
+	fbo->draw(x, y);
 }
 
-void ofxGuido::draw_cache(int x, int y) {
-	if (guido) {
-
-		guido->getDevice()->drawCache.draw(x, y);
-
+ofxGuido::~ofxGuido(){
+	if(mGuidoDevice) {
+		delete mGuidoDevice;
 	}
 }
 
-void ofxGuido::draw(int x, int y, int w, int h) {
-	if (guido)
-		guido->draw(x, y, w, h);
-}
-
-void ofxGuido::setSize(int w, int h) {
-	if (guido) {
-		guido->setSize(w, h);
-		guido->getDevice()->NotifySize(w, h);
-	}
-}
