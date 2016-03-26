@@ -162,7 +162,7 @@ class ofxGuidoDevice : public VGDevice {
 		}
 		/// Returns the platform-specific device context object.
 		virtual void * GetNativeContext() const{
-			return (void *) &drawCache;
+			return 0;
 		}
 
 		// - VGDevice extension --------------------------------------------
@@ -172,9 +172,6 @@ class ofxGuidoDevice : public VGDevice {
 		virtual void PopPenColor();
 		virtual void PushPenWidth(float width);
 		virtual void PopPenWidth();
-
-		ofFbo drawCache;
-		GLuint fbo;
 
 };
 

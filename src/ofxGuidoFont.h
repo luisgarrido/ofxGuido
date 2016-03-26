@@ -29,8 +29,9 @@
 class ofxGuidoFont : public VGFont {
 
 	private:
-		std::string fName;
-		ofTrueTypeFont* fNativeFont;
+		std::string mName;
+		ofTrueTypeFont* mNativeFont;
+		float mMHeight;
 
 	public:
 		ofxGuidoFont(const char * faceName, int size, int properties);
@@ -48,7 +49,10 @@ class ofxGuidoFont : public VGFont {
 
 		// - OF specific -------------------------------------------------
 		const ofTrueTypeFont& NativeFont() const{
-			return *fNativeFont;
+			return *mNativeFont;
+		}
+		float GetMHeight() const {
+			return mMHeight;
 		}
 
 };

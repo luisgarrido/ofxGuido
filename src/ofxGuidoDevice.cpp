@@ -21,10 +21,6 @@
 
 #include <FontManager.h>
 
-#ifndef GL_MULTISAMPLE_ARB
-#define GL_MULTISAMPLE_ARB 0x809D
-#endif
-
 // --------------------------------------------------------------
 // static tools
 static float CoordToRadian(float x, float y){
@@ -44,8 +40,9 @@ void ofxGuidoDevice::initialize(){
 	fCurrentFont = 0;
 	fFontAlign = 0;
 	fRasterOpMode = kOpCopy;
-	fFillColorStack.push(VGColor(0, 0, 0));
-	fPenColorStack.push(VGColor(0, 0, 0));
+	fPenColor = VGColor(0, 0, 0);
+	fFillColor = VGColor(0, 0, 0);
+	fFontColor = VGColor(0, 0, 0);
 }
 
 // --------------------------------------------------------------
@@ -61,77 +58,25 @@ ofxGuidoDevice::ofxGuidoDevice(int width_, int height_, VGSystem* sys) :
 	initialize();
 	fWidth = width_;
 	fHeight = height_;
-
-//	ofClear(255, 255, 255, 0);
-//	glClearColor(0.0, 0.0, 0.0, 0.0);
-#if 0
-	glClear (GL_COLOR_BUFFER_BIT);
-	glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable( GL_DEPTH_TEST );
-	glEnable(GL_MULTISAMPLE_ARB);
-	drawCache.allocate(fWidth, fHeight, GL_RGBA, 8);
-#endif
-
-	int w, h;
-	ofFbo::Settings settings;
-#ifdef ASCOGRAPH_IOS
-	fWidth = 1024;
-	fHeight = 1024;
-
-	/*GLint dims[2];
-	 glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &dims[0]);
-	 fWidth = w = dims[0]; fHeight = h = dims[1];*/
-	settings.width = fWidth;
-	settings.height = fHeight;
-	settings.numSamples = 0;
-#else
-//	glClear (GL_COLOR_BUFFER_BIT);
-//	glEnable (GL_BLEND);
-//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//	glDisable (GL_DEPTH_TEST);
-//	glEnable(GL_MULTISAMPLE_ARB);
-
-	fWidth = width_;
-	fHeight = height_;
-	settings.width = fWidth;
-	settings.height = fHeight;
-//	settings.numSamples = 0;
-#endif
-	//cout << "openFrameworksDevice: allocating FBO: " << fWidth << "x" << fHeight << endl;
-
-	settings.internalformat = GL_RGBA;
-	settings.useDepth = false;
-	settings.useStencil = false;
-
-	drawCache.allocate(settings);
-
-	drawCache.begin();
-	ofClear(255, 255, 255, 0);
-	drawCache.end();
 }
+
 // --------------------------------------------------------------
 ofxGuidoDevice::~ofxGuidoDevice(){
-#ifdef ASCOGRAPH_IOS
-	if (drawCache.isAllocated())
-	glDeleteFramebuffersOES(1, &fbo);
-#endif
 }
 
 // - Drawing services ------------------------------------------------
 // --------------------------------------------------------------
 bool ofxGuidoDevice::BeginDraw(){
 	ofPushStyle();
-	drawCache.begin();
-	ofClear(255, 255, 255, 0);
-	ofLogNotice("AurinDebug") << "BeginDraw";
+	ofLogNotice("ofxGuido") << "vvvvvvv GUIDO BEGIN vvvvvvv";
 	return true;
 }
+
 void ofxGuidoDevice::EndDraw(){
-	drawCache.end();
 	ofPopStyle();
-	ofLogNotice("AurinDebug") << "EndDraw";
+	ofLogNotice("ofxGuido") << "^^^^^^^^ GUIDO END ^^^^^^^^";
 }
+
 void ofxGuidoDevice::InvalidateRect(float /*left*/, float /*top*/, float /*right*/,
 	float /*bottom*/){
 }
@@ -142,17 +87,22 @@ void ofxGuidoDevice::MoveTo(float x, float y){
 	fYPos = y;
 }
 void ofxGuidoDevice::LineTo(float x, float y){
-	ofFill();
+	ofColor(Color2ofColor(fPenColor));
+	ofSetLineWidth(fLineThick);
 	ofLine(fXPos, fYPos, x, y);
 	fXPos = x;
 	fYPos = y;
+//	ofLogNotice("ofxGuido") << "LineTo (" << x << "," << y << ")";
 }
 void ofxGuidoDevice::Line(float x1, float y1, float x2, float y2){
-	ofFill();
+	ofSetColor(Color2ofColor(fPenColor));
+	ofSetLineWidth(fLineThick);
 	ofLine(x1, y1, x2, y2);
+//	ofLogNotice("ofxGuido") << "Line " << fLineThick << " px thick from (" << x1 << "," << y1 << ") to (" << x2 << "," << y2 << ") using color (" << (int) fPenColor.mRed <<"," << (int) fPenColor.mGreen <<"," << (int) fPenColor.mBlue <<"," << (int) fPenColor.mAlpha << ")";
 }
 void ofxGuidoDevice::Frame(float left, float top, float right, float bottom){
 	ofNoFill();
+	ofSetColor(Color2ofColor(fPenColor));
 	ofSetLineWidth(fLineThick);
 	ofRect(left, top, right - left, bottom - top);
 }
@@ -168,6 +118,7 @@ void ofxGuidoDevice::Arc(float left, float top, float right, float bottom, float
 	ofPath path;
 	path.arc(left, top, width, height, fromRadians, toRadians, true);
 	path.setFilled(true);
+	path.setFillColor(Color2ofColor(fFillColor));
 	path.draw();
 }
 
@@ -182,13 +133,16 @@ void ofxGuidoDevice::Polygon(const float * xCoords, const float * yCoords, int c
 		return;
 
 	ofPath path;
-
 	path.newSubPath();
 	path.moveTo(xCoords[0], yCoords[0]);
 	for(int i = 1; i < count; i++)
 		path.lineTo(xCoords[i], yCoords[i]);
 	path.setFilled(true);
+	path.setFillColor(Color2ofColor(fFillColor));
+	path.setStrokeWidth(1);	// Draws better slurs and ties
+	path.setStrokeColor(Color2ofColor(fFillColor));
 	path.draw();
+
 }
 
 void ofxGuidoDevice::Rectangle(float left, float top, float right, float bottom){
@@ -256,14 +210,12 @@ bool ofxGuidoDevice::CopyPixels(int /*xDest*/, int /*yDest*/, int /*dstWidth*/, 
 
 // - Coordinate services ------------------------------------------------
 void ofxGuidoDevice::SetOrigin(float x, float y){
-	//cout << "openFrameworksDevice::SetOrigin:" << x << " " << y << endl;
 	ofTranslate(x - fXOrigin, y - fYOrigin);
 	ofTranslate(x, y);
 	fXOrigin = x;
 	fYOrigin = y;
 }
 void ofxGuidoDevice::OffsetOrigin(float x, float y){
-	//cout << "openFrameworksDevice::OffsetOrigin" << x << " " << y <<  endl;
 	ofTranslate(x, y);
 	fXOrigin += x;
 	fYOrigin += y;
@@ -287,14 +239,15 @@ void ofxGuidoDevice::DeviceToLogical(float * x, float * y) const{
 }
 
 void ofxGuidoDevice::SetScale(float x, float y){
-	//cout << "openFrameworksDevice::SetScale " << x << " " << y << endl;
 	ofScale(x, y);
 	fXScale = x;
 	fYScale = y;
 }
+
 float ofxGuidoDevice::GetXScale() const{
 	return fXScale;
 }
+
 float ofxGuidoDevice::GetYScale() const{
 	return fYScale;
 }
@@ -302,47 +255,12 @@ float ofxGuidoDevice::GetYScale() const{
 void ofxGuidoDevice::NotifySize(int width, int height){
 	fWidth = width;
 	fHeight = height;
-
-	int w, h;
-	ofFbo::Settings settings;
-#ifdef ASCOGRAPH_IOS
-	fWidth = 1024;
-	fHeight = 1024;
-
-	//GLint dims[2];
-	//glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &dims[0]);
-	//fWidth = w = dims[0]; fHeight = h = dims[1];
-	settings.width = fWidth;
-	settings.height = fHeight;
-	settings.numSamples = 0;
-#else
-
-	fWidth = 1024;
-	fHeight = 1024;
-	settings.width = fWidth;
-	settings.height = fHeight;
-	glClear (GL_COLOR_BUFFER_BIT);
-	glEnable (GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable (GL_DEPTH_TEST);
-	glEnable(GL_MULTISAMPLE_ARB);
-	settings.numSamples = 8;
-#endif
-	//cout << "openFrameworksDevice::NotifySize: allocating FBO: " << fWidth << "x" << fHeight << endl;
-	settings.internalformat = GL_RGBA;
-	settings.useDepth = false;
-	settings.useStencil = false;
-
-	drawCache.allocate(settings);
-
-	drawCache.begin();
-	ofClear(255, 255, 255, 0);
-	drawCache.end();
-
 }
+
 int ofxGuidoDevice::GetWidth() const{
 	return fWidth;
 }
+
 int ofxGuidoDevice::GetHeight() const{
 	return fHeight;
 }
@@ -351,43 +269,40 @@ int ofxGuidoDevice::GetHeight() const{
 void ofxGuidoDevice::SetMusicFont(const VGFont * font){
 	fMusicFont = font;
 	if(fCurrentFont != font){
-		//fGraphics->setFont(static_cast<const openFrameworksFont*>(font)->NativeFont()); 
 		fCurrentFont = font;
 	}
-//	ofLogNotice("AurinDebug") << "SetMusicFont " << font->GetName();
 }
+
 const VGFont * ofxGuidoDevice::GetMusicFont() const{
 	return fMusicFont;
 }
+
 void ofxGuidoDevice::SetTextFont(const VGFont * font){
+	// Workaround over "Times" being hardcoded at some places in guidolib
 	if(strcmp(font->GetName(), "Times") == 0) {
 		fTextFont = font = FontManager::gFontText;
 	} else {
 		fTextFont = font;
 	}
 	if(fCurrentFont != font){
-		//fGraphics->setFont(static_cast<const openFrameworksFont*>(font)->NativeFont());
 		fCurrentFont = font;
 	}
-	ofLogNotice("AurinDebug") << "SetTextFont " << font->GetName();
 }
+
 const VGFont * ofxGuidoDevice::GetTextFont() const{
 	return fTextFont;
 }
 
 // - Text and music symbols services -------------------------------------
 void ofxGuidoDevice::DrawMusicSymbol(float x, float y, unsigned int inSymbolID){
-	//cout << "openFrameworksDevice::DrawMusicSymbol: " << x << ", " << y << " id=" << inSymbolID << endl;
 	string text;
 	text += wchar_t(inSymbolID);
 
 	ofSetColor(Color2ofColor(fFontColor));
 	ofTrueTypeFont* f =
 		(ofTrueTypeFont*)(&static_cast<const ofxGuidoFont*>(fCurrentFont)->NativeFont());
-	f->drawStringAsShapes(text, int(x), int(y));
-	//f->drawString (text, int(x), int(y));
-	ofSetColor(Color2ofColor(fFillColor));
-//	ofLogNotice("AurinDebug") << "DrawMusicSymbol " << inSymbolID << " using " << fCurrentFont->GetName() << " and color (" << fFontColor.mRed << "," << fFontColor.mGreen << "," << fFontColor.mBlue << "," << fFontColor.mAlpha << ",";
+	f->drawString (text, int(x), int(y));
+//	ofLogNotice("ofxGuido") << "DrawMusicSymbol at (" << x << "," << y << ") " << inSymbolID << " using " << fCurrentFont->GetName() << " and color (" << fFontColor.mRed << "," << fFontColor.mGreen << "," << fFontColor.mBlue << "," << fFontColor.mAlpha << ",";
 }
 
 void ofxGuidoDevice::DrawString(float x, float y, const char * s, int inCharCount){
@@ -401,28 +316,32 @@ void ofxGuidoDevice::DrawString(float x, float y, const char * s, int inCharCoun
 	string text(s, inCharCount);
 
 	ofSetColor(Color2ofColor(fFontColor));
-	ofTrueTypeFont* f =
-		(ofTrueTypeFont*)(&static_cast<const ofxGuidoFont*>(fTextFont)->NativeFont());
-	f->drawString(text, int(x), int(y));
-	ofSetColor(Color2ofColor(fFillColor));
-//	ofLogNotice("AurinDebug") << "DrawString at (" << x << "," << y << ") '" << text << "' using " << fCurrentFont->GetName();
+	const ofxGuidoFont * gf = static_cast<const ofxGuidoFont *>(fTextFont);
+	ofTrueTypeFont f = gf->NativeFont();
+	f.drawString(text, int(x), int(y) + gf->GetMHeight());
+//	ofLogNotice("ofxGuido") << "DrawString at (" << x << "," << y << ") '" << text << "' using " << fCurrentFont->GetName();
 }
 
 void ofxGuidoDevice::SetFontColor(const VGColor & c){
 	fFontColor = c;
 }
+
 VGColor ofxGuidoDevice::GetFontColor() const{
 	return fFontColor;
 }
+
 void ofxGuidoDevice::SetFontBackgroundColor(const VGColor & c){
 	fFontBackgroundColor = c;
 }
+
 VGColor ofxGuidoDevice::GetFontBackgroundColor() const{
 	return fFontBackgroundColor;
 }
+
 void ofxGuidoDevice::SetFontAlign(unsigned int align){
 	fFontAlign = align;
 }
+
 unsigned int ofxGuidoDevice::GetFontAlign() const{
 	return fFontAlign;
 }
@@ -431,6 +350,7 @@ unsigned int ofxGuidoDevice::GetFontAlign() const{
 void ofxGuidoDevice::SetDPITag(float inDPI){
 	fDPI = inDPI;
 }
+
 float ofxGuidoDevice::GetDPITag() const{
 	return fDPI;
 }
@@ -438,26 +358,35 @@ float ofxGuidoDevice::GetDPITag() const{
 // - VGDevice extension --------------------------------------------
 void ofxGuidoDevice::SelectPenColor(const VGColor & color){
 	fPenColor = color;
+//	ofLogNotice("ofxGuido") << "SelectPenColor (" <<"," << (int) color.mRed <<"," << (int) color.mGreen <<"," << (int) color.mBlue <<"," << (int) color.mAlpha << ")";
 }
+
 void ofxGuidoDevice::PushPenColor(const VGColor & color){
 	fPenColor = color;
 	fPenColorStack.push(color);
+//	ofLogNotice("ofxGuido") << "PushPenColor (" <<"," << (int) color.mRed <<"," << (int) color.mGreen <<"," << (int) color.mBlue <<"," << (int) color.mAlpha << ")";
 }
+
 void ofxGuidoDevice::PopPenColor(){
 	fPenColorStack.pop();
 	fPenColor = fPenColorStack.top();
 }
 
 void ofxGuidoDevice::SelectPenWidth(float width){
-	fLineThick = width;
+	fLineThick = width / 4.0; // kLineThick = 4, normalize to pixels used by ofLine()
 	ofSetLineWidth(fLineThick);
+//	ofLogNotice("ofxGuido") << "SelectPenWidth (" << fLineThick << ")";
 }
+
 void ofxGuidoDevice::PushPenWidth(float width){
-	fPenWidthStack.push(width);
-	fLineThick = width;
+	fLineThick = width / 4.0; // kLineThick = 4, normalize to pixels used by ofLine()
+	fPenWidthStack.push(fLineThick);
+//	ofLogNotice("ofxGuido") << "PushPenWidth (" << fLineThick << ")";
 }
+
 void ofxGuidoDevice::PopPenWidth(){
 	fLineThick = fPenWidthStack.top();
 	fPenWidthStack.pop();
+//	ofLogNotice("ofxGuido") << "PopPenWidth (" << fLineThick << ")";
 }
 

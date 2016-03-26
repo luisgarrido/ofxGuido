@@ -33,35 +33,37 @@ ofxGuidoFont::ofxGuidoFont(const char * faceName, int size, int properties){
 //	if(strstr(faceName, "guido2.ttf")){
 //		fSize *= 0.7;
 //	}
-	fNativeFont = new ofTrueTypeFont();
-	fNativeFont->setGlobalDpi(72);
+	mNativeFont = new ofTrueTypeFont();
+	mNativeFont->setGlobalDpi(72);
 	if(strcmp(faceName, "Times") != 0) {
-		fName = faceName;
+		mName = faceName;
 	} else {
-		fName = "guidotext.ttf";
+		mName = "guidotext.ttf";
 	}
 
-	ofLogNotice("AurinDebug") << "Loading " << fName;
-	if(fNativeFont->loadFont(fName, fSize, true, true, true)){
+	ofLogNotice("AurinDebug") << "Loading " << mName << " with size " << fSize;
+	if(mNativeFont->loadFont(mName, fSize, true, true, true, 72)){
+		mMHeight = mNativeFont->getStringBoundingBox("M", 0, 0).height;
+//	if(fNativeFont->loadFont(fName, fSize)){
 		ofLogNotice("AurinDebug") << "Loading successful";
 //		fNativeFont->setEncoding(OF_ENCODING_ISO_8859_15);
 	}
 }
 
 ofxGuidoFont::~ofxGuidoFont(){
-	delete fNativeFont;
+	delete mNativeFont;
 }
 
 // --------------------------------------------------------------
 const char * ofxGuidoFont::GetName() const{
-	return fName.c_str();
+	return mName.c_str();
 }
 int ofxGuidoFont::GetSize() const{
-	return fNativeFont ? int(fNativeFont->getLineHeight()) : 0;
+	return mNativeFont ? int(mNativeFont->getLineHeight()) : 0;
 }
 int ofxGuidoFont::GetProperties() const{
 	int properties = kFontNone;
-	if(fNativeFont){
+	if(mNativeFont){
 		//if (fNativeFont->isBold()) properties += kFontBold;
 		//if (fNativeFont->isItalic()) properties += kFontItalic;
 		//if (fNativeFont->isUnderlined()) properties += kFontUnderline;
@@ -74,7 +76,7 @@ void ofxGuidoFont::GetExtent(const char * s, int count, float * width, float * h
 	VGDevice *) const{
 
 	string text(s, count);
-	ofRectangle r = fNativeFont->getStringBoundingBox(text, 0, 0);
+	ofRectangle r = mNativeFont->getStringBoundingBox(text, 0, 0);
 	*width = r.width;
 	*height = r.height;
 
@@ -85,7 +87,7 @@ void ofxGuidoFont::GetExtent(unsigned char c, float * width, float * height,
 
 	string text;
 	text += wchar_t(c);
-	ofRectangle r = fNativeFont->getStringBoundingBox(text, 0, 0);
+	ofRectangle r = mNativeFont->getStringBoundingBox(text, 0, 0);
 	*width = r.width;
 	*height = r.height;
 
