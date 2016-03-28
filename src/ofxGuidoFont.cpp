@@ -34,7 +34,7 @@ ofxGuidoFont::ofxGuidoFont(const char * faceName, int size, int properties){
 //		fSize *= 0.7;
 //	}
 	mNativeFont = new ofTrueTypeFont();
-	mNativeFont->setGlobalDpi(72);
+//	mNativeFont->setGlobalDpi(72);
 	if(strcmp(faceName, "Times") != 0) {
 		mName = faceName;
 	} else {
@@ -42,10 +42,10 @@ ofxGuidoFont::ofxGuidoFont(const char * faceName, int size, int properties){
 	}
 
 	ofLogNotice("AurinDebug") << "Loading " << mName << " with size " << fSize;
-	if(mNativeFont->loadFont(mName, fSize, true, true, true, 72)){
+	if(mNativeFont->loadFont(mName, fSize, true, true, true, 0.3, 72)){
 		mMHeight = mNativeFont->getStringBoundingBox("M", 0, 0).height;
 //	if(fNativeFont->loadFont(fName, fSize)){
-		ofLogNotice("AurinDebug") << "Loading successful";
+		ofLogNotice("AurinDebug") << "Loading successful and 'M' height is " << mMHeight;
 //		fNativeFont->setEncoding(OF_ENCODING_ISO_8859_15);
 	}
 }

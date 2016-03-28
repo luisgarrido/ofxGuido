@@ -301,8 +301,8 @@ void ofxGuidoDevice::DrawMusicSymbol(float x, float y, unsigned int inSymbolID){
 	ofSetColor(Color2ofColor(fFontColor));
 	ofTrueTypeFont* f =
 		(ofTrueTypeFont*)(&static_cast<const ofxGuidoFont*>(fCurrentFont)->NativeFont());
-	f->drawString (text, int(x), int(y));
-//	ofLogNotice("ofxGuido") << "DrawMusicSymbol at (" << x << "," << y << ") " << inSymbolID << " using " << fCurrentFont->GetName() << " and color (" << fFontColor.mRed << "," << fFontColor.mGreen << "," << fFontColor.mBlue << "," << fFontColor.mAlpha << ",";
+	f->drawStringAsShapes(text, int(x), int(y));
+//	ofLogNotice("ofxGuido") << "DrawMusicSymbol at (" << x << "," << y << ") " << inSymbolID << " using " << fCurrentFont->GetName() << " and color (" << (int) fFontColor.mRed << "," << (int) fFontColor.mGreen << "," << (int) fFontColor.mBlue << "," << (int) fFontColor.mAlpha << ")";
 }
 
 void ofxGuidoDevice::DrawString(float x, float y, const char * s, int inCharCount){
